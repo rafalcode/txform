@@ -65,16 +65,10 @@ void assign_l_t(char *l_t, char lsw0) /* we shall assigned line type based on fi
     }
 }
 
-int main(int argc, char *argv[])
+ldats **readinfile(char *fname, unsigned *numlines)
 {
-    /* argument accounting: remember argc, the number of arguments, _includes_ the executable */
-    if(argc!=2) {
-        printf("Error. Pls supply argument (name of text file).\n");
-        exit(EXIT_FAILURE);
-    }
-
-    FILE *fin=fopen(argv[1], "r");
-    int i, j, c;
+    FILE *fin=fopen(fname, "r");
+    int i, c;
     char oldc=' ';
     unsigned nc /* numchars */=0, oldnc=0, nl /*num lines */=0;
 
@@ -139,7 +133,25 @@ int main(int argc, char *argv[])
     ncpla=realloc(ncpla, nl*sizeof(ldats*)); /*normalize*/
 
     fclose(fin);
-    printf("Report for file \"%s\" - numchars: %u, nwords= %u, numlines: %u\n", argv[1], nc, gwc, nl);
+    free(lsw);
+    printf("Report for file \"%s\" - numchars: %u, nwords= %u, numlines: %u\n", fname, nc, gwc, nl);
+
+    *numlines=nl;
+    return ncpla;
+}
+
+int main(int argc, char *argv[])
+{
+    /* argument accounting: remember argc, the number of arguments, _includes_ the executable */
+    if(argc!=2) {
+        printf("Error. Pls supply argument (name of text file).\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int i, j;
+    unsigned nl;
+    ldats **ncpla=readinfile(argv[1], &nl);
+
     printf("Numchars, numwords, sz-per-word per line array is:\n");
     for(i=0;i<nl;++i) {
         printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
@@ -148,7 +160,6 @@ int main(int argc, char *argv[])
         printf("\n"); 
     }
 
-    free(lsw);
     free_ldats(ncpla, nl);
 
     return 0;
