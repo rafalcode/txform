@@ -14,10 +14,36 @@
 
 typedef struct
 {
+    char l_t; /* what type of line is iti? use first symbol only: E, empty line, I: indented line, C: commetn line, N. normal line */
     unsigned ccou;
     unsigned wcou;
     unsigned *wsza;
-} lndats; /* line data */
+} ldats; /* line data */
+
+ldats **crea_ldats(unsigned howmany)
+{
+    int i;
+    ldats **ncpla /* numchar per line array */ = malloc(howmany*sizeof(ldats*));
+    for(i=0;i<howmany;++i) {
+        ncpla[i]=malloc(sizeof(ldats));
+        ncpla[i]->l_t='N';
+        ncpla[i]->ccou=0;
+        ncpla[i]->wcou=0;
+        ncpla[i]->wsza=NULL;
+    }
+    return ncpla;
+}
+
+void free_ldats(ldats **ncpla, unsigned howmany)
+{
+    int i;
+    for(i=0;i<howmany;++i) {
+        if(ncpla[i]->wcou)
+            free(ncpla[i]->wsza);
+        free(ncpla[i]);
+    }
+    free(ncpla);
+}
 
 int main(int argc, char *argv[])
 {
@@ -31,15 +57,10 @@ int main(int argc, char *argv[])
     int i, j, c;
     char oldc=' ';
     unsigned nc /* numchars */=0, oldnc=0, nl /*num lines */=0;
-    lndats **ncpla /* numchar per line array */;
+
     unsigned ncpla_buf=CABUF;
-    ncpla=malloc(ncpla_buf*sizeof(lndats*));
-    for(i=0;i<ncpla_buf;++i) {
-        ncpla[i]=malloc(sizeof(lndats));
-        ncpla[i]->ccou=0;
-        ncpla[i]->wcou=0;
-        ncpla[i]->wsza=NULL;
-    }
+    ldats **ncpla=crea_ldats(ncpla_buf);
+
     char *lsw /* last seen word */;
     unsigned lwbuf=WBUF;
     lsw=calloc(lwbuf, sizeof(char));
@@ -71,9 +92,9 @@ int main(int argc, char *argv[])
         if(c=='\n') {
             if(nl==ncpla_buf-1) {
                 ncpla_buf += CABUF;
-                ncpla=realloc(ncpla, ncpla_buf*sizeof(lndats*));
+                ncpla=realloc(ncpla, ncpla_buf*sizeof(ldats*));
                 for(i=ncpla_buf-CABUF;i<ncpla_buf; ++i) {
-                    ncpla[i]=malloc(sizeof(lndats));
+                    ncpla[i]=malloc(sizeof(ldats));
                     ncpla[i]->ccou=0;
                     ncpla[i]->wcou=0;
                     ncpla[i]->wsza=NULL;
@@ -90,7 +111,7 @@ int main(int argc, char *argv[])
     }
     for(i=nl;i<ncpla_buf;++i) 
         free(ncpla[i]);
-    ncpla=realloc(ncpla, nl*sizeof(lndats*)); /*normalize*/
+    ncpla=realloc(ncpla, nl*sizeof(ldats*)); /*normalize*/
 
     fclose(fin);
     printf("Report for file \"%s\" - numchars: %u, nwords= %u, numlines: %u\n", argv[1], nc, gwc, nl);
@@ -103,12 +124,7 @@ int main(int argc, char *argv[])
     }
 
     free(lsw);
-    for(i=0;i<nl;++i) {
-        if(ncpla[i]->wcou)
-            free(ncpla[i]->wsza);
-        free(ncpla[i]);
-    }
-    free(ncpla);
+    free_ldats(ncpla, nl);
 
     return 0;
 }
