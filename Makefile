@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-g -Wall
-EXECUTABLES=txforn
+EXECUTABLES=txform
 
 txform: txform.c
 	$(CC) $(CFLAGS) -o $@ $^
