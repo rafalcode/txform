@@ -16,6 +16,7 @@ typedef struct
 {
     unsigned ccou;
     unsigned wcou;
+    unsigned *wsza;
 } lndats; /* line data */
 
 int main(int argc, char *argv[])
@@ -27,47 +28,61 @@ int main(int argc, char *argv[])
     }
 
     FILE *fin=fopen(argv[1], "r");
-    int i, c;
+    int i, j, c;
     char oldc=' ';
     unsigned nc /* numchars */=0, oldnc=0, nl /*num lines */=0;
     lndats **ncpla /* numchar per line array */;
     unsigned ncpla_buf=CABUF;
     ncpla=malloc(ncpla_buf*sizeof(lndats*));
-    for(i=0;i<ncpla_buf;++i) 
-        ncpla[i]=calloc(1, sizeof(lndats));
+    for(i=0;i<ncpla_buf;++i) {
+        ncpla[i]=malloc(sizeof(lndats));
+        ncpla[i]->ccou=0;
+        ncpla[i]->wcou=0;
+        ncpla[i]->wsza=NULL;
+    }
     char *lsw /* last seen word */;
     unsigned lwbuf=WBUF;
     lsw=calloc(lwbuf, sizeof(char));
     unsigned wc=0 /* word-character count */, gwc=0 /* general word count */, oldgwc=0;
+    unsigned wszabuf=0;
 
     for(;;) {
         c=fgetc(fin);
         if(c==EOF) break;
-        nc++; /* having this just after EOF detector means EOF is not coutned as a character, which is the convention */
-        if( (c == ' ') || (c == '\n') || (c == '\t') ) {
+        if( (c == ' ') || (c == '\n') || (c == '\t') )  {
             if( (oldc != ' ') & (oldc != '\n') & (oldc != '\t')) {
                 lsw[wc]='\0';
                 gwc++;
-                printf("%u) lw=\"%s\";sz=%u\n", gwc, lsw, wc);
+                if(wszabuf == (gwc-oldgwc-1) ) { /* not first word */
+//                    printf("nl:%u;gwc:%u;oldgwc:%u ", nl, gwc, oldgwc);
+                    wszabuf+=1;
+                    ncpla[nl]->wsza = realloc(ncpla[nl]->wsza, wszabuf*sizeof(unsigned));
+                }
+                ncpla[nl]->wsza[gwc-oldgwc-1] = wc;
+        //        printf("%u) lw=\"%s\";sz=%u\n", gwc, lsw, wc);
                 wc=0;
-            }
-            // else if( (c != ' ') && (c != '\n') && (c != '\t'))
+            } /* no else, which means consecutaive white space will be ignored */
         } else {
             CONDREALLOC(wc, lwbuf, WBUF, lsw, char);
             lsw[wc++]=c;
-            putchar(c);
         }
+        nc++; /* having this just after EOF detector means EOF is not coutned as a character, which is the convention */
 
         if(c=='\n') {
-            if(nl==ncpla_buf) {
+            if(nl==ncpla_buf-1) {
                 ncpla_buf += CABUF;
                 ncpla=realloc(ncpla, ncpla_buf*sizeof(lndats*));
-                for(i=ncpla_buf-CABUF;i<ncpla_buf; ++i) 
-                    ncpla[i]=calloc(1, sizeof(lndats));
+                for(i=ncpla_buf-CABUF;i<ncpla_buf; ++i) {
+                    ncpla[i]=malloc(sizeof(lndats));
+                    ncpla[i]->ccou=0;
+                    ncpla[i]->wcou=0;
+                    ncpla[i]->wsza=NULL;
+                }
             }
             ncpla[nl]->ccou=nc-oldnc-1; /* minus one so not to include newlines */
             ncpla[nl]->wcou=gwc-oldgwc; /* minus one so not to include newlines */
             nl++;
+            wszabuf=0;
             oldnc=nc;
             oldgwc=gwc;
         }
@@ -79,14 +94,20 @@ int main(int argc, char *argv[])
 
     fclose(fin);
     printf("Report for file \"%s\" - numchars: %u, nwords= %u, numlines: %u\n", argv[1], nc, gwc, nl);
-    printf("numchar per line array is: ");
-    for(i=0;i<nl;++i) 
-        printf("%u,%u|", ncpla[i]->ccou, ncpla[i]->wcou);
-    printf("\n"); 
+    printf("Numchars, numwords, sz-per-word per line array is:\n");
+    for(i=0;i<nl;++i) {
+        printf("l.%u) %u words: ", i, ncpla[i]->wcou);
+        for(j=0;j<ncpla[i]->wcou;++j) 
+            printf("%u ", ncpla[i]->wsza[j]);
+        printf("\n"); 
+    }
 
     free(lsw);
-    for(i=0;i<nl;++i) 
+    for(i=0;i<nl;++i) {
+        if(ncpla[i]->wcou)
+            free(ncpla[i]->wsza);
         free(ncpla[i]);
+    }
     free(ncpla);
 
     return 0;
