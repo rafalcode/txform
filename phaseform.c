@@ -71,7 +71,7 @@ void assign_l_t(char *l_t, char lsw0) /* we shall assigned line type based on fi
     }
 }
 
-ldats **readinfile(char *fname, unsigned *numlines, phasevitdats *pvddats);
+ldats **readinfile(char *fname, unsigned *numlines, phasevitdats *pvddats)
 {
     FILE *fin=fopen(fname, "r");
     int i, c;
@@ -175,14 +175,38 @@ int main(int argc, char *argv[])
 
     printf("For a phase input file, integer on first line ...\n");
     printf("numinds:%u;numloci:%u\n", pvddats.numinds, pvddats.numloci);
-    /*
+
+    /* numloci to positions on line 3 check */
+    if(pvddats.numloci != ncpla[2]->wcou-1)
+        printf("!!! oh oh, check line 3\n");
+    else
+        printf("Numloc to position-coords on l.3 checked and good.\n");
+    /* numloci to positions on line 3 check */
+    if(pvddats.numloci != ncpla[3]->ccou)
+        printf("!!! oh oh, check line 4\n");
+    else
+        printf("Numloci to position-types on l.4 checked and good.\n");
+    /* numloci to positions on line 3 check */
+    unsigned supposedtlines=pvddats.numinds*3+4;
+    printf("supposedlines=%u\n", supposedtlines); 
+    if(supposedtlines != nl)
+        printf("!!! oh oh, totalines num unexpected\n");
+    else
+        printf("TOtal number of lines as expected ...all good.\n");
+    /* numloci to positions on line 3 check */
+    for(i=5;i<supposedtlines;i+=3) {
+        if(pvddats.numloci != ncpla[i]->wcou)
+            printf("!!! oh oh, check line %u\n", i);
+        if(pvddats.numloci != ncpla[i+1]->wcou)
+            printf("!!! oh oh, check line %u\n", i+1);
+    }
+
     for(i=0;i<nl;++i) {
         printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
         for(j=0;j<ncpla[i]->wcou;++j) 
             printf("%u%c ", ncpla[i]->wda[j].wsz, ncpla[i]->wda[j].w_t);
         printf("\n"); 
     }
-    */
 
     free_ldats(ncpla, nl);
 
