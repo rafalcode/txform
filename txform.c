@@ -26,7 +26,7 @@ ldats **crea_ldats(unsigned howmany)
     ldats **ncpla /* numchar per line array */ = malloc(howmany*sizeof(ldats*));
     for(i=0;i<howmany;++i) {
         ncpla[i]=malloc(sizeof(ldats));
-        ncpla[i]->l_t='N';
+        ncpla[i]->l_t='?';
         ncpla[i]->ccou=0;
         ncpla[i]->wcou=0;
         ncpla[i]->wsza=NULL;
@@ -43,6 +43,20 @@ void free_ldats(ldats **ncpla, unsigned howmany)
         free(ncpla[i]);
     }
     free(ncpla);
+}
+
+void assign_l_t(char *l_t, char lsw0) /* we shall assigned line type based on first char of first word */
+{
+    switch(lsw0) {
+        case '\n':
+            *l_t='E'; return;
+        case ' ': case '\t':
+            *l_t='I'; return;
+        case '#': case '>':
+            *l_t='C'; return;
+        default:
+            *l_t='N'; return;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -70,19 +84,20 @@ int main(int argc, char *argv[])
     for(;;) {
         c=fgetc(fin);
         if(c==EOF) break;
+        /* deal with first character of a line here */
+        if(nc==oldnc)
+            assign_l_t(&(ncpla[nl]->l_t), c);
         if( (c == ' ') || (c == '\n') || (c == '\t') )  {
             if( (oldc != ' ') & (oldc != '\n') & (oldc != '\t')) {
                 lsw[wc]='\0';
                 gwc++;
                 if(wszabuf == (gwc-oldgwc-1) ) { /* not first word */
-//                    printf("nl:%u;gwc:%u;oldgwc:%u ", nl, gwc, oldgwc);
                     wszabuf+=1;
                     ncpla[nl]->wsza = realloc(ncpla[nl]->wsza, wszabuf*sizeof(unsigned));
                 }
                 ncpla[nl]->wsza[gwc-oldgwc-1] = wc;
-        //        printf("%u) lw=\"%s\";sz=%u\n", gwc, lsw, wc);
                 wc=0;
-            } /* no else, which means consecutaive white space will be ignored */
+            } /* no else, which means consecutive white space will be ignored */
         } else {
             CONDREALLOC(wc, lwbuf, WBUF, lsw, char);
             lsw[wc++]=c;
@@ -117,7 +132,7 @@ int main(int argc, char *argv[])
     printf("Report for file \"%s\" - numchars: %u, nwords= %u, numlines: %u\n", argv[1], nc, gwc, nl);
     printf("Numchars, numwords, sz-per-word per line array is:\n");
     for(i=0;i<nl;++i) {
-        printf("l.%u) %u words: ", i, ncpla[i]->wcou);
+        printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
         for(j=0;j<ncpla[i]->wcou;++j) 
             printf("%u ", ncpla[i]->wsza[j]);
         printf("\n"); 
