@@ -14,10 +14,16 @@
 
 typedef struct
 {
+    unsigned wsz;
+    char w_t;
+} wdats;
+
+typedef struct
+{
     char l_t; /* what type of line is iti? use first symbol only: E, empty line, I: indented line, C: commetn line, N. normal line */
     unsigned ccou;
     unsigned wcou;
-    unsigned *wsza;
+    wdats *wda; /* word dat array */
 } ldats; /* line data */
 
 ldats **crea_ldats(unsigned howmany)
@@ -29,7 +35,7 @@ ldats **crea_ldats(unsigned howmany)
         ncpla[i]->l_t='?';
         ncpla[i]->ccou=0;
         ncpla[i]->wcou=0;
-        ncpla[i]->wsza=NULL;
+        ncpla[i]->wda=NULL;
     }
     return ncpla;
 }
@@ -39,7 +45,7 @@ void free_ldats(ldats **ncpla, unsigned howmany)
     int i;
     for(i=0;i<howmany;++i) {
         if(ncpla[i]->wcou)
-            free(ncpla[i]->wsza);
+            free(ncpla[i]->wda);
         free(ncpla[i]);
     }
     free(ncpla);
@@ -75,7 +81,7 @@ int main(int argc, char *argv[])
     unsigned ncpla_buf=CABUF;
     ldats **ncpla=crea_ldats(ncpla_buf);
 
-    char *lsw /* last seen word */;
+    char *lsw /* last seen word */, lswtype='u';
     unsigned lwbuf=WBUF;
     lsw=calloc(lwbuf, sizeof(char));
     unsigned wc=0 /* word-character count */, gwc=0 /* general word count */, oldgwc=0;
@@ -93,13 +99,17 @@ int main(int argc, char *argv[])
                 gwc++;
                 if(wszabuf == (gwc-oldgwc-1) ) { /* not first word */
                     wszabuf+=1;
-                    ncpla[nl]->wsza = realloc(ncpla[nl]->wsza, wszabuf*sizeof(unsigned));
+                    ncpla[nl]->wda = realloc(ncpla[nl]->wda, wszabuf*sizeof(wdats));
                 }
-                ncpla[nl]->wsza[gwc-oldgwc-1] = wc;
+                ncpla[nl]->wda[gwc-oldgwc-1].wsz = wc;
+                ncpla[nl]->wda[gwc-oldgwc-1].w_t = lswtype;
+                lswtype='u';
                 wc=0;
             } /* no else, which means consecutive white space will be ignored */
         } else {
             CONDREALLOC(wc, lwbuf, WBUF, lsw, char);
+            if( (c<48) | (c>57) ) /* if yes, means there's no chance it's a psoitive integer, u */
+                lswtype='c'; /* any old characters */
             lsw[wc++]=c;
         }
         nc++; /* having this just after EOF detector means EOF is not coutned as a character, which is the convention */
@@ -112,7 +122,7 @@ int main(int argc, char *argv[])
                     ncpla[i]=malloc(sizeof(ldats));
                     ncpla[i]->ccou=0;
                     ncpla[i]->wcou=0;
-                    ncpla[i]->wsza=NULL;
+                    ncpla[i]->wda=NULL;
                 }
             }
             ncpla[nl]->ccou=nc-oldnc-1; /* minus one so not to include newlines */
@@ -134,7 +144,7 @@ int main(int argc, char *argv[])
     for(i=0;i<nl;++i) {
         printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
         for(j=0;j<ncpla[i]->wcou;++j) 
-            printf("%u ", ncpla[i]->wsza[j]);
+            printf("%u%c ", ncpla[i]->wda[j].wsz, ncpla[i]->wda[j].w_t);
         printf("\n"); 
     }
 
