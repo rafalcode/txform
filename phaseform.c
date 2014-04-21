@@ -1,4 +1,4 @@
-/* txform, a program to check text form */
+/* phaseform .. this tests the format of the "inp" and "txknown" */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -275,16 +275,19 @@ int main(int argc, char *argv[])
             printf("!!! oh oh, check line %u\n", i+1);
     }
 
-        /*
-    for(i=0;i<pvddats.nlfile;++i) {
-        printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
-        for(j=0;j<ncpla[i]->wcou;++j) 
-            printf("%u%c ", ncpla[i]->wda[j].wsz, ncpla[i]->wda[j].w_t);
-        printf("\n"); 
-    }
-    */
+    /*
+       for(i=0;i<pvddats.nlfile;++i) {
+       printf("l.%u/t=%c) #w=%u: ", i, ncpla[i]->l_t, ncpla[i]->wcou);
+       for(j=0;j<ncpla[i]->wcou;++j) 
+       printf("%u%c ", ncpla[i]->wda[j].wsz, ncpla[i]->wda[j].w_t);
+       printf("\n"); 
+       }
+       */
 
     free_ldats(ncpla, pvddats.nlfile);
+
+    if(argc==2)
+        return 0;
 
     /* OK. we're going to look at the knoiw file now */
     phasevitdats pvddats2;

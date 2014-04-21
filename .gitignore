@@ -4,3 +4,5 @@ tet2.c
 nus.t
 txform
 phaseform
+pod16_ingr.inp
+pod16_ingr.known
